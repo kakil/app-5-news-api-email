@@ -5,6 +5,7 @@ import smtplib
 import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from urllib.parse import quote_plus
 
 dotenv.load_dotenv()
 
@@ -12,9 +13,26 @@ api_key = os.getenv("NEWS_API_KEY")
 google_username = os.getenv("GOOGLE_USERNAME")
 google_app_password = os.getenv("GOOGLE_APP_PASSWORD")
 
+topic = "Machine Learning"
+
 # url = f'https://newsapi.org/v2/everything?q=%22AI%20tools%22%20OR%20%22AI%20apps%22&from=2024-05-10&sortBy=publishedAt&apiKey={api_key}'
 # url = f'https://newsapi.org/v2/everything?q="Data%20Science"%20OR%20"ML"%20OR%20"AI"&language=en&sortBy=publishedAt&apiKey={api_key}'
-url = f'https://newsapi.org/v2/everything?q="Data%20Science%20apps"%20OR%20"Machine%20Learning%20apps"%20OR%20"AI%20apps"&language=en&sortBy=publishedAt&apiKey={api_key}'
+# url = (f"https://newsapi.org/v2/everything?q={topic}"
+#        f"&language=en&sortBy=publishedAt&apiKey={api_key}")
+
+# By Keyword
+base_url = "https://newsapi.org/v2/top-headlines"
+query_params = (
+    quote_plus("artificial intelligence tools OR new machine learning applications OR latest advancements in AI OR "
+               "cutting-edge AI")
+)
+sources_params = (
+    quote_plus("techcrunch")
+)
+
+url = (f"{base_url}?language=en&sortBy=publishedAt&"
+       f"sources={sources_params}&apiKey={api_key}")
+
 
 
 def get_articles():
@@ -43,11 +61,12 @@ def send_email():
 
     body = ""
 
-    for article in articles:
+    for article in articles[:20]:
         if article["title"] is not None:
             title = article.get("title", "No Title Available")
             description = article.get("description", "No Description Available")
-            body += f"<p><strong>{title}</strong><br/>{description}</p>\n"
+            url = article.get("url")
+            body += f"<p><strong>{title}</strong><br/>{description}<br>{url}</p>\n"
 
     # Create MIME message
     msg = MIMEMultipart()
