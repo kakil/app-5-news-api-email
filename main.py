@@ -3,6 +3,8 @@ import requests
 import dotenv
 import smtplib
 import ssl
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 dotenv.load_dotenv()
 
@@ -39,19 +41,25 @@ def send_email():
 
     articles = get_articles()
 
-    titles = ""
-    descriptions = ""
+    body = ""
 
     for article in articles:
-        titles += f"{article['title']} \n"
-        descriptions += f"{article['description']} \n"
+        if article["title"] is not None:
+            title = article.get("title", "No Title Available")
+            description = article.get("description", "No Description Available")
+            body += f"<p><strong>{title}</strong><br/>{description}</p>\n"
 
-    message = f"Titles: \n{titles} \n\n Descriptions: \n{descriptions}"
+    # Create MIME message
+    msg = MIMEMultipart()
+    msg['From'] = username
+    msg["To"] = receiver
+    msg["Subject"] = "Daily News Update"
+    msg.attach(MIMEText(body, 'html'))
 
     try:
         with smtplib.SMTP_SSL(host, port, context=context) as server:
             server.login(username, password)
-            server.sendmail(username, receiver, message.encode('utf-8'))
+            server.sendmail(username, receiver, msg.as_string())
     except Exception as e:
         print(f"There was an error sending the email: {e}")
     else:
